@@ -1,22 +1,34 @@
-const CACHE = "roulettepro-full-v1";
-const ASSETS = ["./", "./index.html", "./app.js", "./manifest.json", "./sw.js"];
+// Simple offline-first Service Worker
+const CACHE = "roulette-monitor-pro-v1";
+const ASSETS = [
+  "./",
+  "./index.html",
+  "./app.js",
+  "./analytics.js",
+  "./manifest.json"
+];
 
-self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)));
+self.addEventListener("install", (e)=>{
+  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));
+  self.skipWaiting();
 });
 
-self.addEventListener("activate", (e) => {
+self.addEventListener("activate", (e)=>{
   e.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.map(k => k!==CACHE ? caches.delete(k) : null)))
+    caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))
   );
+  self.clients.claim();
 });
 
-self.addEventListener("fetch", (e) => {
+self.addEventListener("fetch", (e)=>{
+  const req = e.request;
   e.respondWith(
-    caches.match(e.request).then((r) => r || fetch(e.request).then((resp) => {
-      const copy = resp.clone();
-      caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(()=>{});
-      return resp;
-    }).catch(()=>caches.match("./index.html")))
+    caches.match(req).then(cached=>{
+      return cached || fetch(req).then(resp=>{
+        const copy = resp.clone();
+        caches.open(CACHE).then(c=>c.put(req, copy)).catch(()=>{});
+        return resp;
+      }).catch(()=>cached);
+    })
   );
 });
