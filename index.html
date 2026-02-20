@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1220" />
+  <link rel="manifest" href="manifest.json" />
+  <title>Roulette Monitor Pro</title>
+
+  <style>
+    :root{
+      --bg:#070b14; --panel:#0b1220; --panel2:#0a0f1b;
+      --text:#e7eefc; --muted:rgba(231,238,252,.75);
+      --line:rgba(255,255,255,.10);
+      --cyan:rgba(0,255,255,.25);
+      --good:#27e18a; --warn:#ffd24a; --bad:#ff4d6d;
+      --chip:rgba(255,255,255,.06);
+      --shadow: 0 0 18px rgba(0,255,255,.10);
+      --r:16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: radial-gradient(1200px 600px at 50% -10%, rgba(0,255,255,.08), transparent 55%),
+                  radial-gradient(900px 500px at 15% 10%, rgba(255,77,109,.08), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+    }
+    header{
+      position:sticky; top:0; z-index:10;
+      backdrop-filter: blur(10px);
+      background: linear-gradient(to bottom, rgba(7,11,20,.92), rgba(7,11,20,.65));
+      border-bottom:1px solid var(--line);
+      padding:14px 14px 10px;
+    }
+    .row{display:flex; gap:10px; align-items:center}
+    .title{font-weight:900; letter-spacing:.2px; font-size:16px}
+    .sub{color:var(--muted); font-size:12px; margin-top:3px}
+    .wrap{max-width:1150px; margin:0 auto; padding:14px}
+    .grid{display:grid; gap:12px}
+    @media(min-width:980px){ .grid{grid-template-columns: 1.15fr .85fr} }
+    .card{
+      background: linear-gradient(145deg, var(--panel), var(--panel2));
+      border:1px solid rgba(0,255,255,.08);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      padding:12px;
+    }
+    .card h3{margin:0 0 10px; font-size:13px; letter-spacing:.2px; color:rgba(231,238,252,.92)}
+    .tabs{display:flex; gap:8px; overflow:auto; padding-bottom:6px}
+    .tab{
+      border:1px solid var(--line); background:rgba(255,255,255,.03);
+      color:var(--text); padding:8px 10px; border-radius:999px;
+      font-size:12px; white-space:nowrap; cursor:pointer;
+    }
+    .tab.active{border-color:rgba(0,255,255,.25); box-shadow:0 0 0 2px rgba(0,255,255,.08) inset}
+    .pill{display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border-radius:999px;
+      border:1px solid var(--line); background:var(--chip); font-size:12px; color:var(--muted)}
+    .pill b{color:var(--text); font-weight:800}
+    .kpis{display:grid; grid-template-columns: repeat(4,1fr); gap:10px}
+    @media(max-width:520px){ .kpis{grid-template-columns: repeat(2,1fr)} }
+    .kpi{padding:10px; border-radius:14px; border:1px solid var(--line); background:rgba(255,255,255,.02)}
+    .kpi .label{color:var(--muted); font-size:11px}
+    .kpi .value{font-size:18px; font-weight:900; margin-top:4px}
+    .status{
+      display:flex; gap:10px; align-items:flex-start;
+      border:1px solid var(--line); background:rgba(255,255,255,.02);
+      border-radius:14px; padding:10px;
+    }
+    .dot{width:10px; height:10px; border-radius:99px; margin-top:4px}
+    .btn{
+      border:1px solid rgba(0,255,255,.18);
+      background: rgba(0,255,255,.06);
+      color:var(--text);
+      padding:10px 12px; border-radius:14px;
+      cursor:pointer; font-weight:800;
+    }
+    .btn:active{transform: scale(.99)}
+    .btn.secondary{border-color:var(--line); background:rgba(255,255,255,.03); font-weight:750}
+    .toolbar{display:flex; gap:8px; flex-wrap:wrap}
+    .mini{font-size:12px; color:var(--muted)}
+    .numgrid{display:grid; grid-template-columns: repeat(6, 1fr); gap:8px}
+    @media(min-width:700px){ .numgrid{grid-template-columns: repeat(9, 1fr)} }
+    .num{
+      text-align:center; padding:10px 0; border-radius:14px;
+      border:1px solid var(--line); background:rgba(255,255,255,.02);
+      font-weight:900; cursor:pointer; user-select:none;
+    }
+    .num.red{border-color:rgba(255,77,109,.25); background:rgba(255,77,109,.08)}
+    .num.black{border-color:rgba(231,238,252,.16); background:rgba(231,238,252,.03)}
+    .num.green{border-color:rgba(39,225,138,.30); background:rgba(39,225,138,.07)}
+    .list{display:flex; flex-wrap:wrap; gap:8px}
+    .chip{
+      padding:7px 10px; border-radius:999px; border:1px solid var(--line);
+      background:rgba(255,255,255,.02); font-size:12px; color:var(--muted)
+    }
+    .chip b{color:var(--text)}
+    .table{
+      width:100%; border-collapse:separate; border-spacing:0;
+      overflow:hidden; border-radius:14px; border:1px solid var(--line)
+    }
+    .table th,.table td{padding:10px; font-size:12px; border-bottom:1px solid rgba(255,255,255,.06)}
+    .table th{color:var(--muted); text-align:left; background:rgba(255,255,255,.02)}
+    .table tr:last-child td{border-bottom:none}
+    .modalWrap{
+      display:none;
+      position:fixed; inset:0; z-index:9999;
+      background:rgba(0,0,0,.55);
+      backdrop-filter: blur(10px);
+      padding:18px;
+    }
+    .modal{
+      max-width:980px; margin:0 auto;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.10);
+      background:linear-gradient(145deg, var(--panel), var(--panel2));
+      box-shadow: 0 0 30px rgba(0,255,255,.12);
+      padding:14px;
+    }
+    .modalGrid{
+      display:grid; gap:12px;
+    }
+    @media(min-width:980px){ .modalGrid{ grid-template-columns: 1fr 1fr; } }
+    .ocrGrid{
+      display:grid; grid-template-columns:repeat(10,1fr); gap:6px;
+    }
+    .ocrGrid input{
+      width:100%; padding:8px; border-radius:10px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.05);
+      color:var(--text);
+      text-align:center;
+      font-weight:900;
+    }
+    canvas{background:rgba(255,255,255,.02); border:1px solid rgba(255,255,255,.10); border-radius:14px; padding:8px}
+    footer{padding:12px 14px 30px; color:var(--muted); font-size:12px; text-align:center}
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="row" style="justify-content:space-between">
+      <div>
+        <div class="title">🎲 Roulette Monitor Pro (PWA)</div>
+        <div class="sub">Importe 100 números via print (1ª vez). Depois: 1 toque por giro. Diagnóstico + Bayes + Simulações.</div>
+      </div>
+      <button id="installBtn" class="btn secondary" style="display:none">Instalar</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="card">
+      <h3>🎛️ Mesas (roletas)</h3>
+      <div class="row" style="gap:12px; flex-wrap:wrap; justify-content:space-between">
+        <div id="tabs" class="tabs"></div>
+        <div class="toolbar">
+          <button id="addTableBtn" class="btn">+ Nova mesa</button>
+          <button id="renameTableBtn" class="btn secondary">Renomear</button>
+          <button id="exportBtn" class="btn secondary">Exportar JSON</button>
+          <button id="importBtn" class="btn secondary">Importar JSON</button>
+          <button id="importImageBtn" class="btn secondary">📸 Print inicial (100)</button>
+          <input id="fileInput" type="file" accept="application/json" style="display:none" />
+          <input id="imageInput" type="file" accept="image/*" style="display:none" />
+        </div>
+      </div>
+
+      <div class="row" style="gap:10px; margin-top:10px; flex-wrap:wrap">
+        <span class="pill">Janela: <b id="windowLabel">120</b></span>
+        <input id="windowRange" type="range" min="20" max="500" step="10" value="120" />
+        <span class="pill">Últimos: <b id="lastLabel">24</b></span>
+        <input id="lastRange" type="range" min="10" max="120" step="2" value="24" />
+        <button id="undoBtn" class="btn secondary">Desfazer</button>
+        <button id="clearBtn" class="btn secondary">Limpar mesa</button>
+      </div>
+      <div class="mini" style="margin-top:8px">
+        “Automático” aqui = você registra o número em 1 toque; o app faz o resto (OCR só no print inicial).
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>⚡ Entrada rápida (0–36)</h3>
+        <div id="numgrid" class="numgrid"></div>
+
+        <div class="card" style="margin-top:12px; box-shadow:none; background:rgba(255,255,255,.02); border-color:rgba(255,255,255,.10)">
+          <h3 style="margin-bottom:8px">📊 Frequência por número (janela)</h3>
+          <canvas id="freqChart" height="130"></canvas>
+        </div>
+
+        <div class="card" style="margin-top:12px; box-shadow:none; background:rgba(255,255,255,.02); border-color:rgba(255,255,255,.10)">
+          <h3 style="margin-bottom:8px">🎨 Cores (janela)</h3>
+          <canvas id="colorChart" height="140"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>📌 Estado da janela</h3>
+
+        <div class="kpis" style="margin-bottom:10px">
+          <div class="kpi"><div class="label">Total (janela)</div><div id="kTotal" class="value">—</div></div>
+          <div class="kpi"><div class="label">Último número</div><div id="kLast" class="value">—</div></div>
+          <div class="kpi"><div class="label">Vermelho / Preto</div><div id="kColors" class="value">—</div></div>
+          <div class="kpi"><div class="label">Zeros</div><div id="kZero" class="value">—</div></div>
+        </div>
+
+        <div class="status" style="margin-bottom:10px">
+          <div id="statusDot" class="dot"></div>
+          <div>
+            <div id="statusTitle" style="font-weight:950">—</div>
+            <div id="statusText" class="mini" style="margin-top:4px">—</div>
+            <div class="list" style="margin-top:10px">
+              <span class="chip">χ² (aprox): <b id="chi2">—</b></span>
+              <span class="chip">p (aprox): <b id="pval">—</b></span>
+              <span class="chip">Runs z: <b id="runsz">—</b></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="box-shadow:none; background:rgba(255,255,255,.02); border-color:rgba(255,255,255,.10)">
+          <h3 style="margin-bottom:8px">🔥 Hot / 🧊 Cold (na janela)</h3>
+          <div class="row" style="gap:10px; flex-wrap:wrap">
+            <div style="flex:1; min-width:220px">
+              <div class="mini">Hot (top 8 por contagem)</div>
+              <div id="hotList" class="list" style="margin-top:8px"></div>
+            </div>
+            <div style="flex:1; min-width:220px">
+              <div class="mini">Cold (top 8 por “tempo sem sair”)</div>
+              <div id="coldAgeList" class="list" style="margin-top:8px"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:10px; box-shadow:none; background:rgba(255,255,255,.02); border-color:rgba(255,255,255,.10)">
+          <h3 style="margin-bottom:8px">🧬 Bayes (Dirichlet) — Δ vs uniforme (top 10)</h3>
+          <div id="bayesList" class="list"></div>
+          <div class="mini" style="margin-top:8px">
+            Δ positivo = acima do uniforme **na janela** (diagnóstico). Em RNG justo, próximo giro continua 1/37 por número.
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:10px; box-shadow:none; background:rgba(255,255,255,.02); border-color:rgba(255,255,255,.10)">
+          <h3 style="margin-bottom:8px">🧪 Simulador (Monte Carlo) — risco e dispersão</h3>
+          <div class="row" style="flex-wrap:wrap">
+            <span class="pill">Simulações: <b id="mcSimsLabel">1200</b></span>
+            <input id="mcSims" type="range" min="200" max="5000" step="100" value="1200" />
+            <span class="pill">Horizonte: <b id="mcHLabel">400</b></span>
+            <input id="mcH" type="range" min="50" max="5000" step="50" value="400" />
+            <span class="pill">Stake: <b id="mcStakeLabel">1.0</b></span>
+            <input id="mcStake" type="range" min="1" max="50" step="1" value="1" />
+          </div>
+
+          <div class="row" style="gap:8px; margin-top:10px; flex-wrap:wrap">
+            <button id="runMC1" class="btn">Simular 1:1 (cor/paridade)</button>
+            <button id="runMC2" class="btn secondary">Simular dúzia (2:1)</button>
+          </div>
+
+          <div class="row" style="gap:10px; margin-top:10px; flex-wrap:wrap">
+            <span class="chip">Média final: <b id="mcMean">—</b></span>
+            <span class="chip">Mediana: <b id="mcMed">—</b></span>
+            <span class="chip">P5–P95: <b id="mcBand">—</b></span>
+            <span class="chip">Max DD médio: <b id="mcDD">—</b></span>
+          </div>
+
+          <div style="margin-top:10px">
+            <canvas id="mcChart" height="150"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h3>🧾 Últimos giros</h3>
+      <table class="table">
+        <thead>
+          <tr><th>#</th><th>Número</th><th>Cor</th><th>Dúzia</th><th>Coluna</th><th>Hora</th></tr>
+        </thead>
+        <tbody id="lastTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- OCR Hybrid Modal -->
+  <div id="ocrModalWrap" class="modalWrap">
+    <div class="modal">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <div style="font-weight:950">📸 Importação inicial (OCR híbrido)</div>
+          <div class="mini">Objetivo: extrair exatamente <b>100</b> números em ordem (esq→dir, cima→baixo). Você pode corrigir e confirmar.</div>
+        </div>
+        <button id="ocrClose" class="btn secondary">Fechar</button>
+      </div>
+
+      <div class="modalGrid" style="margin-top:12px">
+        <div class="card" style="box-shadow:none; border-color:rgba(255,255,255,.10)">
+          <h3>Preview (imagem)</h3>
+          <canvas id="ocrCanvas" height="320"></canvas>
+          <div class="mini" style="margin-top:8px">Dica: prints nítidos e com zoom aumentam a precisão.</div>
+
+          <div class="row" style="gap:8px; margin-top:12px; flex-wrap:wrap">
+            <button id="ocrRun" class="btn">Rodar OCR</button>
+            <button id="ocrMaybeInvert" class="btn secondary">Inverter ordem (100)</button>
+            <span class="pill">Detectados: <b id="ocrCount">0</b>/100</span>
+          </div>
+        </div>
+
+        <div class="card" style="box-shadow:none; border-color:rgba(255,255,255,.10)">
+          <h3>Grade 10×10 (editável)</h3>
+          <div id="ocrGrid" class="ocrGrid"></div>
+
+          <div class="row" style="gap:8px; margin-top:12px; flex-wrap:wrap">
+            <button id="ocrConfirm" class="btn">Confirmar importação</button>
+            <button id="ocrCancel" class="btn secondary">Cancelar</button>
+            <span class="mini">Confirmação só libera com <b>100</b> válidos (0–36).</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Este app é um monitor estatístico/probabilístico e simulador de risco. Ele não prevê o próximo giro.
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
